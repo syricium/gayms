@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    restart: always
+    container_name: gayms_web
+    environment:
+      DEBUG: "false"
+    networks:
+      - gayms
+    ports:
+      - "6969:6969"
+    depends_on:
+      - db
+  db:
+    image: postgres
+    restart: always
+    container_name: gayms_db
+    environment:
+      POSTGRES_DB: gayms
+      POSTGRES_USER: gayms
+      POSTGRES_PASSWORD: "changeme"
+    networks:
+      - gayms
+    
+networks:
+  gayms:
