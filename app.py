@@ -7,7 +7,7 @@ from io import BytesIO
 import asyncpg
 import humanize
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, status, Request
 from fastapi.responses import Response, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
 from passlib.hash import pbkdf2_sha256
@@ -124,6 +124,25 @@ async def download(file_id: str):
         data,
         media_type=content_type,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+    
+@app.get("/hi-im-discord-crawler")
+async def discord_check(request: Request):
+    agent = request.headers.get("user-agent")
+    return Response(
+    f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>hi im discord crawler</title>
+        <meta content="hi im discord crawler" property="og:title" />
+        <meta content="{agent}" property="og:description" />
+    </head>
+    <body>
+        <p>this site is only for getting discord's crawler agent, there's totally definitely not any secret definitely not no way</p>
+    </body>
+    </html>
+    """.lstrip()
     )
 
 
