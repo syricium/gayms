@@ -66,7 +66,7 @@ async def update_key(username):
     )
 
     raw_api_key = "".join(random.choices(string.ascii_letters, k=64))
-    api_key = pbkdf2_sha256.encrypt(raw_api_key)
+    api_key = pbkdf2_sha256.hash(raw_api_key)
 
     await db.execute(
         "UPDATE users SET api_key = $2 WHERE username = $1", username, api_key
