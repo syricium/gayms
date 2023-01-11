@@ -68,11 +68,14 @@ async def update_key(username):
     raw_api_key = "".join(random.choices(string.ascii_letters, k=64))
     api_key = pbkdf2_sha256.hash(raw_api_key)
 
-    await db.execute(
+    results = await db.execute(
         "UPDATE users SET api_key = $2 WHERE username = $1", username, api_key
     )
-
-    print(f"new api key: {raw_api_key}")
+    
+    if results == "UPDATE 1":
+        print(f"new api key: {raw_api_key}")
+    else:
+        print("insertion failed")
     
 async def list_users():
     db = await asyncpg.create_pool(
