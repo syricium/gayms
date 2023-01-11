@@ -126,7 +126,7 @@ async def download(file_id: str):
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
     
-@app.get("/hi-im-discord-crawler")
+@app.get("/hi-discord-crawler-agent")
 async def discord_check(request: Request):
     agent = request.headers.get("user-agent")
     return Response(
@@ -135,12 +135,13 @@ async def discord_check(request: Request):
     <html lang="en">
         <head>
         <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta property="og:site_name" content="hi discord crawler">
+            <meta property="og:url" content="https://ms.syrice.pink">
+            <meta property="og:title" content="hi discord crawler">
+            <meta property="og:description" content="{agent}">
             <meta property="og:type" content="website">
-            <meta property="og:url" content="https://ms.syrice.pink/">
-            <meta property="og:site_name" content="hi im discord crawler">
-            <meta data-react-helmet="true" property="og:description" content="{agent}">
-            <title>hi im discord crawler</title>
+            <meta name="og:image" itemprop="image" content="https://ms.syrice.pink/view/cmvskOiDt0H3g8SMxzRQ4S3C">
+            <title>hi discord crawler</title>
         </head>
         <body>
             <p>this site is only for getting discord's crawler agent, there's totally definitely not any secret definitely not no way</p>
