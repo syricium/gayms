@@ -73,9 +73,39 @@ async def update_key(username):
     )
 
     print(f"new api key: {raw_api_key}")
+    
+async def list_users():
+    db = await asyncpg.create_pool(
+        database=settings.db.NAME,
+        host="127.0.0.1" if debug else "gayms_db",
+        port="5432",
+        user=settings.db.USER,
+        password=settings.db.PASSWORD,
+    )
+    
+    results = await db.fetch("SELECT username FROM users")
+    
+    for result in results:
+        print("- "+result["username"])
+        
+async def check_key(username, key):
+    db = await asyncpg.create_pool(
+        database=settings.db.NAME,
+        host="127.0.0.1" if debug else "gayms_db",
+        port="5432",
+        user=settings.db.USER,
+        password=settings.db.PASSWORD,
+    )
+    
+    result = await db.fetchval("SELECT api_key FROM users WHERE username = $1", username)
+    
+    if pbkdf2_sha256.verify(key, result):
+        print("key valid")
+    else:
+        print("key invalid")
 
 
-options = {"add_user": add_user, "remove_user": remove_user, "update_key": update_key}
+options = {"add_user": add_user, "remove_user": remove_user, "update_key": update_key, "list_users": list_users, "check_key": check_key}
 
 options_fmt = "\n".join(f"{k+1}. {v}" for k, v in enumerate(options.keys()))
 selection = input(f"Which option do you want?\n{options_fmt}\n\nSelection: ").lower()
