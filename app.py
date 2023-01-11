@@ -135,8 +135,9 @@ async def discord_check(request: Request):
     <html>
     <head>
         <title>hi im discord crawler</title>
-        <meta content="hi im discord crawler" property="og:title" />
-        <meta content="{agent}" property="og:description" />
+        <meta property="og:title" content="hi im discord crawler" />
+        <meta property="og:type" content="website" />
+        <meta property="og:description" content="{agent}" />
     </head>
     <body>
         <p>this site is only for getting discord's crawler agent, there's totally definitely not any secret definitely not no way</p>
