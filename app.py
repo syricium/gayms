@@ -132,16 +132,16 @@ async def discord_check(request: Request):
     return Response(
     f"""
     <!DOCTYPE html>
-    <html>
-    <head>
-        <title>hi im discord crawler</title>
-        <meta property="og:title" content="hi im discord crawler" />
-        <meta property="og:type" content="website" />
-        <meta property="og:description" content="{agent}" />
-    </head>
-    <body>
-        <p>this site is only for getting discord's crawler agent, there's totally definitely not any secret definitely not no way</p>
-    </body>
+    <html lang="en">
+        <head>
+            <title>hi im discord crawler</title>
+            <meta property="og:title" content="hi im discord crawler" />
+            <meta property="og:type" content="website" />
+            <meta property="og:description" content="{agent}" />
+        </head>
+        <body>
+            <p>this site is only for getting discord's crawler agent, there's totally definitely not any secret definitely not no way</p>
+        </body>
     </html>
     """.lstrip()
     )
