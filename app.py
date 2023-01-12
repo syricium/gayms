@@ -7,8 +7,8 @@ from io import BytesIO
 import asyncpg
 import humanize
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, status, Request
-from fastapi.responses import Response, StreamingResponse
+from fastapi import Depends, FastAPI, HTTPException, UploadFile
+from fastapi.responses import Response, StreamingResponse, JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from passlib.hash import pbkdf2_sha256
 import settings
@@ -49,7 +49,7 @@ async def api_key_auth(api_key: str = Depends(oauth2_scheme)):
 
     if not query:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Forbidden"
+            status_code=401, detail="Forbidden"
         )
 
     invalid = True
@@ -61,7 +61,7 @@ async def api_key_auth(api_key: str = Depends(oauth2_scheme)):
 
     if invalid:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Forbidden"
+            status_code=401, detail="Forbidden"
         )
 
 
@@ -87,10 +87,13 @@ async def view(file_id: str):
     query = await app.db.fetchrow("SELECT * FROM files WHERE file_id = $1", file_id)
 
     if not query:
-        return {
+        return JSONResponse(
+            {
             "error": True,
             "exception": f'There is no file with the entry "{file_id}".',
-        }
+            },
+            status_code=404
+        )
 
     data = query["data"]
     content_type = query["content_type"]
@@ -111,10 +114,13 @@ async def download(file_id: str):
     query = await app.db.fetchrow("SELECT * FROM files WHERE file_id = $1", file_id)
 
     if not query:
-        return {
+        return JSONResponse(
+            {
             "error": True,
             "exception": f'There is no file with the entry "{file_id}".',
-        }
+            },
+            status_code=404
+        )
 
     data = query["data"]
     content_type = query["content_type"]
@@ -125,30 +131,6 @@ async def download(file_id: str):
         media_type=content_type,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
-    
-@app.get("/hi-discord-crawler-agent")
-async def discord_check(request: Request):
-    agent = request.headers.get("user-agent")
-    return Response(
-    f"""
-    <!DOCTYPE html>
-    <html lang="en">
-        <head>
-        <meta charset="utf-8">
-            <meta property="og:site_name" content="hi discord crawler">
-            <meta property="og:url" content="https://ms.syrice.pink">
-            <meta property="og:title" content="hi discord crawler">
-            <meta property="og:description" content="{agent}">
-            <meta property="og:type" content="website">
-            <meta name="og:image" itemprop="image" content="https://ms.syrice.pink/view/cmvskOiDt0H3g8SMxzRQ4S3C">
-            <title>hi discord crawler</title>
-        </head>
-        <body>
-            <p>this site is only for getting discord's crawler agent, there's totally definitely not any secret definitely not no way</p>
-        </body>
-    </html>
-    """.lstrip()
-    )
 
 
 @app.post("/upload", dependencies=[Depends(api_key_auth)])
@@ -158,7 +140,13 @@ async def upload(file: UploadFile):
 
     if filesize > filesize_limit:
         limit_fmt = humanize.naturalsize(filesize_limit)
-        return {"error": True, "exception": f"Filesize can't be over {limit_fmt}."}
+        return JSONResponse(
+            {
+                "error": True,
+                "exception": f"Filesize can't be over {limit_fmt}."
+            },
+            status_code=404
+        )
 
     content_type = file.content_type
     file_id = await generate_fid()
