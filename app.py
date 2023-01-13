@@ -7,19 +7,16 @@ from io import BytesIO
 import asyncpg
 import humanize
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, UploadFile
-from fastapi.responses import Response, StreamingResponse, JSONResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
 from passlib.hash import pbkdf2_sha256
+
 import settings
 
 app = FastAPI()
 app.debug = (
-    True
-    if not os.getenv("DEBUG")
-    else False
-    if os.getenv("DEBUG") == "false"
-    else "true"
+    True if not os.getenv("DEBUG") else False if os.getenv("DEBUG") == "false" else True
 )
 
 app.logger = logging.getLogger(__name__)
@@ -48,9 +45,7 @@ async def api_key_auth(api_key: str = Depends(oauth2_scheme)):
     query = await app.db.fetch("SELECT api_key FROM users")
 
     if not query:
-        raise HTTPException(
-            status_code=401, detail="Forbidden"
-        )
+        raise HTTPException(status_code=401, detail="Forbidden")
 
     invalid = True
     for item in query:
@@ -60,9 +55,7 @@ async def api_key_auth(api_key: str = Depends(oauth2_scheme)):
             break
 
     if invalid:
-        raise HTTPException(
-            status_code=401, detail="Forbidden"
-        )
+        raise HTTPException(status_code=401, detail="Forbidden")
 
 
 async def generate_fid(check_existing: bool = True):
@@ -78,9 +71,15 @@ async def generate_fid(check_existing: bool = True):
 
     return "".join(file_id)
 
+
+async def get_user_by_key(key: str):
+    return await app.db.fetchval("SELECT username FROM users WHERE api_key = $1", key)
+
+
 @app.get("/")
 async def index():
     return Response("im gay")
+
 
 @app.get("/view/{file_id}")
 async def view(file_id: str):
@@ -89,10 +88,10 @@ async def view(file_id: str):
     if not query:
         return JSONResponse(
             {
-            "error": True,
-            "exception": f'There is no file with the entry "{file_id}".',
+                "error": True,
+                "exception": f'There is no file with the entry "{file_id}".',
             },
-            status_code=404
+            status_code=404,
         )
 
     data = query["data"]
@@ -116,10 +115,10 @@ async def download(file_id: str):
     if not query:
         return JSONResponse(
             {
-            "error": True,
-            "exception": f'There is no file with the entry "{file_id}".',
+                "error": True,
+                "exception": f'There is no file with the entry "{file_id}".',
             },
-            status_code=404
+            status_code=404,
         )
 
     data = query["data"]
@@ -134,31 +133,32 @@ async def download(file_id: str):
 
 
 @app.post("/upload", dependencies=[Depends(api_key_auth)])
-async def upload(file: UploadFile):
+async def upload(request: Request, file: UploadFile):
     filesize = len(await file.read())
     filesize_limit = 500_000_000
 
     if filesize > filesize_limit:
         limit_fmt = humanize.naturalsize(filesize_limit)
         return JSONResponse(
-            {
-                "error": True,
-                "exception": f"Filesize can't be over {limit_fmt}."
-            },
-            status_code=404
+            {"error": True, "exception": f"Filesize can't be over {limit_fmt}."},
+            status_code=404,
         )
+
+    api_key = request.headers.get("Authorization").lstrip("Bearer ")
 
     content_type = file.content_type
     file_id = await generate_fid()
+    uploader = await get_user_by_key(api_key)
     await file.seek(0)
     data = await file.read()
 
     await app.db.execute(
-        "INSERT INTO files (file_id, filename, data, content_type) VALUES ($1, $2, $3, $4)",
+        "INSERT INTO files (file_id, filename, data, content_type, uploader) VALUES ($1, $2, $3, $4, $5)",
         file_id,
         file.filename,
         data,
         content_type,
+        uploader,
     )
 
     return {"error": False, "file_id": file_id}
