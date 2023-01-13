@@ -112,12 +112,46 @@ async def check_key(username, key):
         print("key invalid")
 
 
+async def custom():
+    last_func_type = "fetch"
+    func_types = ["execute", "fetch", "fetchrow", "fetchval"]
+
+    db = await asyncpg.create_pool(
+        database=settings.db.NAME,
+        host="127.0.0.1" if debug else "gayms_db",
+        port="5432",
+        user=settings.db.USER,
+        password=settings.db.PASSWORD,
+    )
+
+    while True:
+        query = input("> ")
+
+        if query in ["quit", "exit", "\q"]:
+            break
+
+        lower_query = query.lower()
+
+        for func_type in func_types:
+            if query.startswith(func_type + " "):
+                last_func_type = func_type
+                query = query.lstrip(func_type)
+
+        func = getattr(db, last_func_type)
+
+        result = await func(query)
+
+        print(result)
+        print("")
+
+
 options = {
     "add_user": add_user,
     "remove_user": remove_user,
     "update_key": update_key,
     "list_users": list_users,
     "check_key": check_key,
+    "custom": custom,
 }
 
 options_fmt = "\n".join(f"{k+1}. {v}" for k, v in enumerate(options.keys()))
