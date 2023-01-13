@@ -143,6 +143,7 @@ async def custom():
         command.append(query)
         
         if query.endswith(";"):
+            query = query.rstrip(";")
             func = getattr(db, last_func_type)
 
             try:
