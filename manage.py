@@ -3,6 +3,7 @@ import inspect
 import os
 import random
 import string
+import traceback
 
 import asyncpg
 from passlib.hash import pbkdf2_sha256
@@ -123,6 +124,8 @@ async def custom():
         user=settings.db.USER,
         password=settings.db.PASSWORD,
     )
+    
+    command = []
 
     while True:
         query = input("> ")
@@ -136,13 +139,23 @@ async def custom():
             if query.startswith(func_type + " "):
                 last_func_type = func_type
                 query = query.lstrip(func_type)
+                
+        command.append(query)
+        
+        if query.endswith(";"):
+            func = getattr(db, last_func_type)
 
-        func = getattr(db, last_func_type)
-
-        result = await func(query)
-
-        print(result)
-        print("")
+            try:
+                result = await func("\n".join(command))
+            except Exception as exc:
+                traceback.print_exception(
+                    type(exc),
+                    exc,
+                    exc.__traceback__
+                )
+            else:
+                print(result)
+            print("")
 
 
 options = {
