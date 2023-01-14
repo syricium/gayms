@@ -73,7 +73,12 @@ async def generate_fid(check_existing: bool = True):
 
 
 async def get_user_by_key(key: str):
-    return await app.db.fetchval("SELECT username FROM users WHERE api_key = $1", key)
+    results = await app.db.fetch("SELECT * FROM users")
+    for result in results:
+        api_key = result["api_key"]
+        username = result["username"]
+        if pbkdf2_sha256.verify(key, api_key):
+            return username
 
 
 @app.get("/")
@@ -104,7 +109,7 @@ async def view(file_id: str):
     return StreamingResponse(
         buffer,
         media_type=content_type,
-        headers={"Content-Disposition": f'filename="{filename}"'},
+        headers={"Content-Disposition": f'filename="{filename}"', "Content-Type": content_type},
     )
 
 
@@ -128,7 +133,7 @@ async def download(file_id: str):
     return Response(
         data,
         media_type=content_type,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": content_type},
     )
 
 
@@ -151,6 +156,15 @@ async def upload(request: Request, file: UploadFile):
     uploader = await get_user_by_key(api_key)
     await file.seek(0)
     data = await file.read()
+    
+    if not uploader:
+        return JSONResponse(
+            {
+                "error": True,
+                "exception": "get_user_by_key function unexpectedly returned NoneType, please report this or try again"
+            },
+            500
+        )
 
     await app.db.execute(
         "INSERT INTO files (file_id, filename, data, content_type, uploader) VALUES ($1, $2, $3, $4, $5)",
@@ -165,4 +179,4 @@ async def upload(request: Request, file: UploadFile):
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=6969, reload=app.debug)
+    uvicorn.run("app:app", host="0.0.0.0", port=7000 if app.debug else 6969, reload=app.debug)
