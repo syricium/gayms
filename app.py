@@ -88,6 +88,8 @@ async def index():
 
 @app.get("/view/{file_id}")
 async def view(file_id: str):
+    file_id = file_id.split(".")[0]
+    
     query = await app.db.fetchrow("SELECT * FROM files WHERE file_id = $1", file_id)
 
     if not query:
@@ -115,6 +117,8 @@ async def view(file_id: str):
 
 @app.get("/download/{file_id}")
 async def download(file_id: str):
+    file_id = file_id.split(".")[0]
+    
     query = await app.db.fetchrow("SELECT * FROM files WHERE file_id = $1", file_id)
 
     if not query:
